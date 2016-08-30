@@ -93,5 +93,3 @@ class WorldBankDataSpider(scrapy.spiders.Spider):
 
             for data_file in bulk_download.split(u';'):
                 yield self.generate_data_item(data_file, public_time)
-                break
-            break
