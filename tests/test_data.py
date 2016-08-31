@@ -35,18 +35,78 @@ class TestData(TestService):
         '''
             UnitTest ``models.Data.insert``
         '''
+        # 正常插入一条记录
         value_dict = {
             'scrape_time': '2016-08-10',
             'public_time': '2016-08-10',
             'source': 'test',
             'name': 'insert',
+            'checksum': 'test',
             'filetype': 'test',
             'url': 'url',
             'status': 'test',
             'filepath': 'test',
         }
         obj = Data(**value_dict)
-        value_dict['data_id'] = Data.insert(obj)
+        Data.insert(obj)
+        with DBSession() as session:
+            results = session.query(
+                Data
+            ).filter(Data.name == 'insert').all()
+            assert_equals(len(results), 1)
+            result = results.pop()
+            for key, value in value_dict.iteritems():
+                real_value = getattr(result, key)
+                if 'time' in key:
+                    real_value = arrow.get(real_value).format('YYYY-MM-DD')
+                assert_equals(
+                    real_value,
+                    value,
+                )
+
+        # 插入记录存在, checksum未改变
+        value_dict = {
+            'scrape_time': '2016-08-10',
+            'public_time': '2016-08-10',
+            'source': 'test',
+            'name': 'insert',
+            'checksum': 'test',
+            'filetype': 'test',
+            'url': 'url',
+            'status': 'test',
+            'filepath': 'test',
+        }
+        obj = Data(**value_dict)
+        Data.insert(obj)
+        with DBSession() as session:
+            results = session.query(
+                Data
+            ).filter(Data.name == 'insert').all()
+            assert_equals(len(results), 1)
+            result = results.pop()
+            for key, value in value_dict.iteritems():
+                real_value = getattr(result, key)
+                if 'time' in key:
+                    real_value = arrow.get(real_value).format('YYYY-MM-DD')
+                assert_equals(
+                    real_value,
+                    value,
+                )
+
+        # 插入记录存在, checksum已改变
+        value_dict = {
+            'scrape_time': '2016-09-10',
+            'public_time': '2016-08-10',
+            'source': 'test',
+            'name': 'insert',
+            'checksum': 'changed',
+            'filetype': 'test',
+            'url': 'url',
+            'status': 'test',
+            'filepath': 'test',
+        }
+        obj = Data(**value_dict)
+        Data.insert(obj)
         with DBSession() as session:
             results = session.query(
                 Data

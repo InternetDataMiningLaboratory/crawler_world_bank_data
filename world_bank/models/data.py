@@ -6,7 +6,8 @@
     ``data`` 的持久化对象
 '''
 from world_bank.database import Base, DBBase, DBSession
-from sqlalchemy import Column, String, Integer, DateTime
+from sqlalchemy import Column, String, DateTime
+from sqlalchemy.exc import IntegrityError
 import logging
 
 
@@ -19,13 +20,13 @@ class Data(Base, DBBase):
     '''
     __tablename__ = 'data'
 
-    data_id = Column('data_id', Integer, primary_key=True)
     scrape_time = Column('scrape_time', DateTime)
     public_time = Column('public_time', DateTime)
     source = Column('source', String(255))
     name = Column('name', String(255))
+    checksum = Column('checksum', String(255))
     filetype = Column('filetype', String(255))
-    url = Column('url', String(255))
+    url = Column('url', String(255), primary_key=True)
     status = Column('status', String(255))
     filepath = Column('filepath', String(255))
 
@@ -35,8 +36,23 @@ class Data(Base, DBBase):
             插入对象
         '''
         with DBSession() as session:
-            session.add(obj)
-            session.flush()
-            id = obj.data_id
-            return id
-
+            try:
+                session.add(obj)
+                session.flush()
+            except IntegrityError, e:
+                session.rollback()
+                logger.info(e.message)
+                if 'Duplicate' in e.message:
+                    logger.info('Records exists')
+                    record = session.query(cls).filter(
+                        cls.url == obj.url
+                    ).one()
+                    if record.checksum != obj.checksum:
+                        logger.info('Update data {0}'.format(record.url))
+                        session.delete(record)
+                        session.add(obj)
+                        session.flush()
+                    else:
+                        logger.info('No update to {0}'.format(record.url))
+                else:
+                    logger.exception(e)

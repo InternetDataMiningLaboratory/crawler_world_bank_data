@@ -16,3 +16,4 @@ class WorldBankDataItem(scrapy.Item):
     filepath = scrapy.Field()
     scrape_time = scrapy.Field()
     public_time = scrapy.Field()
+    checksum = scrapy.Field()
